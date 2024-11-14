@@ -1,10 +1,11 @@
 import { Router } from "express";
-import { createUser, getUserById } from "../controllers/userController";
+import { createUserHandler } from "../controllers/userController";
+import validate from "../middlewares/validateResource";
+import { userSchema } from "../utils/validators";
 
 const userRoutes = Router();
 
-userRoutes.get("/:id", getUserById);
-
-userRoutes.post("/", createUser);
+userRoutes.post("/", validate(userSchema), createUserHandler);
+//userRoutes.get("/:id", getUserByIdHandler);
 
 export default userRoutes;

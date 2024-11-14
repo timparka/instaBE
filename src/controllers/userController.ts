@@ -1,32 +1,24 @@
-import { PrismaClient } from "@prisma/client";
+import { createUser, validatePassword } from "../service/userService";
 import { Request, Response } from "express";
 
-const userClient = new PrismaClient().user;
 
-export const createUser = async (req: Request, res: Response) => {
+export const createUserHandler = async (req: Request, res: Response) => {
     try {
         const userData = req.body;
-        const user = await userClient.create({
-            data: userData,
-        });
-
+        const user = await createUser(userData);
         res.status(201).json({ data: user });
     } catch (error) {
         console.log(error);
+        res.status(500).json({ error: "Internal Server Error" });
     }
 }
 
-export const getUserById = async (req: Request, res: Response) => {
-    try {
-        const userId = req.params.id
-        const user = await userClient.findUnique({
-            where: {
-                id: userId,
-            },
-        });
-
-        res.status(200).json({ data: user });
-    } catch (error) {
-        console.log(error);
-    }
-}
+// export const getUserByIdHandler = async (req: Request, res: Response) => {
+//     try {
+//         const userId = req.params.id
+//         const user = await findUser(userId);
+//         res.status(200).json({ data: user });
+//     } catch (error) {
+//         console.log(error);
+//     }
+//}

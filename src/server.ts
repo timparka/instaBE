@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import userRoute from './routes/userRoute';
 //import postRoute from './routes/postRoute';
 //import uploadRoute from './routes/uploadRoute';
+import logger from "./utils/logger";
 
 dotenv.config();
 
@@ -18,4 +19,4 @@ app.use('/api/users', userRoute);
 //app.use('/api/upload', uploadRoute);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => logger.info(`Server running on on http://localhost:${PORT}`));
