@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  username  String   @unique
+  accountId String   @unique
+  email     String   @unique
+  bio       String?
+  imageId   String?
+  imageUrl  String?
+  password  String
+  posts     Post[]
+  likes     Post[]   @relation("Likes")
+  saves     Save[]
+
+  @@map("users")
+}
+
+model Post {
+  id        String   @id @default(cuid())
+  caption   String?
+  tags      String[]
+  imageUrl  String
+  imageId   String
+  location  String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  likedBy   User[]   @relation("Likes")
+  saves     Save[]
+
+  @@map("posts")
+}
+
+model Save {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@map("saves")
+}
