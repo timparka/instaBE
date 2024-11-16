@@ -33,3 +33,11 @@ export async function findUser(id: string) {
     }
 }
 
+export async function followUser(params:type) {
+    //add followed usersId to user's following list
+    //add following usersId to user's followed list
+}
+
+export async function showFollows(params:type) {
+    //return users follower and following list
+}

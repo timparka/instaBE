@@ -8,19 +8,21 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  name      String
-  username  String   @unique
-  email     String   @unique
-  bio       String?
-  imageId   String?
-  imageUrl  String?
-  password  String
-  posts     Post[]
-  likes     Post[]   @relation("Likes")
-  saves     Save[]
-  follows   User[]   @relation("User")
-  followers User[]   @relation("User")
+  id          String   @id @default(cuid())
+  name        String
+  username    String   @unique
+  email       String   @unique
+  bio         String?
+  imageId     String?
+  imageUrl    String?
+  password    String
+  posts       Post[]
+  comments    Comment[]
+  likes       Like[]
+  saves       Save[]
+  followedBy  Follow[]  @relation("Followers")
+  following   Follow[]  @relation("Following")
+  createdAt   DateTime  @default(now())
 
   @@map("users")
 }
@@ -33,20 +35,55 @@ model Post {
   imageId   String
   location  String?
   userId    String
-  likes     Int
-  comments  String[]
+  likes     Like[]
+  comments  Comment[]
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  likedBy   User[]   @relation("Likes")
   saves     Save[]
+  createdAt DateTime @default(now())
 
   @@map("posts")
+}
+
+model Comment {
+  id        String    @id @default(cuid())
+  postId    String
+  userId    String
+  content   String
+  createdAt DateTime  @default(now())
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("comments")
+}
+
+model Like {
+  id        String    @id @default(cuid())
+  postId    String
+  userId    String
+  createdAt DateTime  @default(now())
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@map("likes")
+}
+
+model Follow {
+  followerId String
+  followeeId String
+  createdAt  DateTime @default(now())
+
+  follower   User @relation("Following", fields: [followerId], references: [id], onDelete: Cascade)
+  followee   User @relation("Followers", fields: [followeeId], references: [id], onDelete: Cascade)
+
+  @@id([followerId, followeeId])
+  @@map("follows")
 }
 
 model Save {
   id        String   @id @default(cuid())
   userId    String
   postId    String
-  saves     Int
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
 
