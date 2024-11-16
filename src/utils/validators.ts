@@ -9,3 +9,11 @@ export const userSchema = z.object({
     imageId: z.string().optional(),
     imageUrl: z.string().optional(),
 })
+
+export const postSchema = z.object({
+    caption: z.string().optional(),
+    tags: z.string().optional(),
+    location: z.string().optional(),
+    imageId: z.string().optional(),
+    imageUrl: z.string().optional(),
+})

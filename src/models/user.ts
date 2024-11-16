@@ -1,5 +1,4 @@
 export interface CreateUserInput {
-    accountId: string;
     name: string;
     email: string;
     password: string;
