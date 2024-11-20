@@ -1,7 +1,8 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from 'bcrypt';
-import { omit } from 'lodash';
+import { omit, orderBy } from 'lodash';
 import { CreateUserInput } from "../models/user";
+import { CreatePostInput } from "../models/post";
 
 const prisma = new PrismaClient();
 
@@ -33,11 +34,45 @@ export async function findUser(id: string) {
     }
 }
 
-export async function followUser(params:type) {
+export async function getHomeFeed(userId: string, postId: string) {
+    //need userIds of user who is calling this methods following list
+    //from here we grab the most recent posts ids (createdAt flag)
+    //get post's imageurls
+}
+
+export async function getUsersPage(userId: string) {
+    //grab userId and get all postid from that user
+    const userPage = await prisma.user.findMany({
+        where: {
+            userId: userId,
+        },
+        orderBy: {
+            createdAt: 'desc',
+        },
+        select: {
+            imageUrl: true,
+        },
+    });
+
+    if (!userPage || !userPage.posts) {
+        return [];
+    }
+
+    return userPage.posts.map((post: CreatePostInput) => post.imageUrl);
+    //return all post image urls for that user
+}
+
+export async function getUsersFeed(userId: string, postId: string) {
+    //grab userId and post id from that user
+    //use functions below to grab likes and comments for each unique post
+    //return that and imageUrls
+}
+
+export async function followUser(userId: string) {
     //add followed usersId to user's following list
     //add following usersId to user's followed list
 }
 
-export async function showFollows(params:type) {
-    //return users follower and following list
+export async function showFollows(userId: string) {
+    //return users follower and following count
 }

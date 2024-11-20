@@ -1,5 +1,8 @@
 import { PrismaClient } from "@prisma/client";
 import { CreatePostInput } from "../models/post";
+import { orderBy } from "lodash";
+import { CommentDetails } from "../types/CommentDetails";
+import { RecentLike } from "../types/likeDetails";
 
 const prisma = new PrismaClient();
 
@@ -10,24 +13,6 @@ export async function createPost(data: CreatePostInput) {
         },
     });
     return post;
-}
-
-export async function getHomeFeed(params:type) {
-    //need userIds of user who is calling this methods following list
-    //from here we grab the most recent posts ids (createdAt flag)
-    //get post's imageurls
-    //call methods below for comments and likes
-}
-
-export async function getUsersPage() {
-    //grab userId and get all postid from that user
-    //return all post image urls for that user
-}
-
-export async function getUsersFeed(params:type) {
-    //grab userId and post id from that user
-    //use functions below to grab likes and comments for each unique post
-    //return that and imageUrls
 }
 
 export async function addLike(postId: string, userId: string) {
@@ -51,20 +36,73 @@ export async function getLikes(postId: string) {
     return count;
 }
 
-export async function recentUsernameOfLikes() {
-    //get 3 most recent tables of that post's userIds and return 3 usernames
+export async function recentUsernameOfLikes(postId: string) {
+    const recentLikes = await prisma.like.findMany({
+        where: {
+            postId: postId,
+        },
+        orderBy: {
+            createdAt: 'desc',
+        },
+        take: 3,
+        include: {
+            user: {
+                select: {
+                    username: true,
+                },
+            },
+        },
+    });
+    const usernames = recentLikes.map((like: RecentLike) => like.user.username);
+    if (recentLikes.length === 0) {
+        return [];
+    }
+    return usernames;
 }
 
-export async function addComment(postId: string, userId: string, comment: string) {
+export async function addComment(postId: string, userId: string, commentId: string) {
     //get postId and userId from system that is calling it
+    const comment = await prisma.comment.create({
+        where: {
+            userId: userId,
+            postId: postId,
+            commentId: commentId,
+        }
+    })
     //new entry in comment table using the contents provided
 }
 
-export async function getCommentCount() {
+export async function getCommentCount(postId: string) {
     //count comments by querying database of that post
+    const count = await prisma.comment.count({
+        where: {
+            postId: postId,
+        },
+    });
+    return count;
 }
 
-export async function getCommentDetails(params:type) {
+export async function getCommentDetails(postId: string) {
     //get all comments in that posts table
+    const comments = await prisma.comment.findMany({
+        where: {
+            postId: postId,
+        },
+        orderBy: {
+            createdAt: 'desc',
+        },
+        include: {
+            user: {
+                select: {
+                    username: true,
+                },
+            },
+        },
+    });
+    return comments.map((comment: CommentDetails) => ({
+        username: comment.user.username,
+        content: comment.content,
+        createdAt: comment.createdAt,
+    }));
     //return userId and contents of that comment
 }
