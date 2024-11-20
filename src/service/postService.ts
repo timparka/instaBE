@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { CreatePostInput } from "../models/post";
 import { orderBy } from "lodash";
 import { CommentDetails } from "../types/CommentDetails";
@@ -6,7 +6,7 @@ import { RecentLike } from "../types/likeDetails";
 
 const prisma = new PrismaClient();
 
-export async function createPost(data: CreatePostInput) {
+export async function createPost(data: Prisma.PostCreateInput) {
     const post = await prisma.post.create({
         data: {
             ...data,
@@ -105,4 +105,13 @@ export async function getCommentDetails(postId: string) {
         createdAt: comment.createdAt,
     }));
     //return userId and contents of that comment
+}
+
+export async function addSave(postId: string, userId: string) {
+    const save = await prisma.save.create({
+        where: {
+            postId: postId,
+            userId: userId,
+        },
+    });
 }

@@ -3,10 +3,11 @@ import bcrypt from 'bcrypt';
 import { omit, orderBy } from 'lodash';
 import { CreateUserInput } from "../models/user";
 import { CreatePostInput } from "../models/post";
+import { Prisma } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export async function createUser(data: CreateUserInput) {
+export async function createUser(data: Prisma.UserCreateInput) {
     const hashedPassword = await bcrypt.hash(data.password!, 10);
     const user = await prisma.user.create({
         data: {
@@ -44,7 +45,7 @@ export async function getUsersPage(userId: string) {
     //grab userId and get all postid from that user
     const userPage = await prisma.user.findMany({
         where: {
-            userId: userId,
+            id: userId,
         },
         orderBy: {
             createdAt: 'desc',
@@ -64,6 +65,11 @@ export async function getUsersPage(userId: string) {
 
 export async function getUsersFeed(userId: string, postId: string) {
     //grab userId and post id from that user
+    const userFeed = await prisma.user.findMany({
+        where: {
+            
+        }
+    })
     //use functions below to grab likes and comments for each unique post
     //return that and imageUrls
 }
