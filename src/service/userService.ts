@@ -42,26 +42,33 @@ export async function getHomeFeed(userId: string, postId: string) {
 }
 
 export async function getUsersPage(userId: string) {
-    //grab userId and get all postid from that user
-    const userPage = await prisma.user.findMany({
-        where: {
-            id: userId,
+    // Fetch the user's posts ordered by createdAt in descending order
+    const userPage = await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+      select: {
+        posts: {
+          orderBy: {
+            createdAt: 'desc', // Order posts by createdAt
+          },
+          select: {
+            imageUrl: true, // Only fetch image URLs
+          },
         },
-        orderBy: {
-            createdAt: 'desc',
-        },
-        select: {
-            imageUrl: true,
-        },
+      },
     });
-
+  
+    // If no user or no posts, return an empty array
     if (!userPage || !userPage.posts) {
-        return [];
+      return [];
     }
-
-    return userPage.posts.map((post: CreatePostInput) => post.imageUrl);
-    //return all post image urls for that user
-}
+  
+    // Map over posts to extract image URLs
+    return userPage.posts.map((post) => post.imageUrl);
+  }
+  
+  
 
 export async function getUsersFeed(userId: string, postId: string) {
     //grab userId and post id from that user

@@ -1,8 +1,6 @@
 import { Prisma, PrismaClient } from "@prisma/client";
 import { CreatePostInput } from "../models/post";
 import { orderBy } from "lodash";
-import { CommentDetails } from "../types/CommentDetails";
-import { RecentLike } from "../types/likeDetails";
 
 const prisma = new PrismaClient();
 
@@ -19,7 +17,7 @@ export async function addLike(postId: string, userId: string) {
     //get postId and userId
     //make new like object with that postId and userId
     const like = await prisma.like.create({
-        where: {
+        data: {
             postId: postId,
             userId: userId,
         },
@@ -53,7 +51,7 @@ export async function recentUsernameOfLikes(postId: string) {
             },
         },
     });
-    const usernames = recentLikes.map((like: RecentLike) => like.user.username);
+    const usernames = recentLikes.map((like) => like.user.username);
     if (recentLikes.length === 0) {
         return [];
     }
@@ -63,10 +61,10 @@ export async function recentUsernameOfLikes(postId: string) {
 export async function addComment(postId: string, userId: string, commentId: string) {
     //get postId and userId from system that is calling it
     const comment = await prisma.comment.create({
-        where: {
+        data: {
             userId: userId,
             postId: postId,
-            commentId: commentId,
+            content: commentId,
         }
     })
     //new entry in comment table using the contents provided
@@ -99,7 +97,7 @@ export async function getCommentDetails(postId: string) {
             },
         },
     });
-    return comments.map((comment: CommentDetails) => ({
+    return comments.map((comment) => ({
         username: comment.user.username,
         content: comment.content,
         createdAt: comment.createdAt,
@@ -109,7 +107,7 @@ export async function getCommentDetails(postId: string) {
 
 export async function addSave(postId: string, userId: string) {
     const save = await prisma.save.create({
-        where: {
+        data: {
             postId: postId,
             userId: userId,
         },
