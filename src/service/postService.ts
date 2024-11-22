@@ -1,5 +1,4 @@
 import { Prisma, PrismaClient } from "@prisma/client";
-import { CreatePostInput } from "../models/post";
 import { orderBy } from "lodash";
 
 const prisma = new PrismaClient();
