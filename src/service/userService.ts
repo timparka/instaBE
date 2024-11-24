@@ -4,6 +4,7 @@ import { omit, orderBy } from 'lodash';
 import { Prisma } from "@prisma/client";
 import { mapToPostDTO } from "../utils/formatPostDTO";
 import { PostDTO } from "../dto/postDTO";
+import { fetchManyPostDetails } from "./postService";
 
 const prisma = new PrismaClient();
 
@@ -60,38 +61,11 @@ export async function getFollowingIds(userId: string): Promise<string[]> {
     //get post's imageurls
 }
 
-export async function fetchPostDetails(followeeIds: string[]) {
-    return await prisma.post.findMany({
-        where: {
-            userId: {
-                in: followeeIds,
-            },
-        },
-        orderBy: {
-            createdAt: "desc"
-        },
-        include: {
-            user: {
-                select: {
-                    id: true,
-                    username: true,
-                    imageUrl: true
-                }
-            },
-            _count: {
-                select: {
-                    likes: true,
-                    comments: true
-                }
-            },
-        },
-    });
-}
 
 export async function getHomeFeed(userId: string): Promise<PostDTO[]> {
     const followeeIds = await getFollowingIds(userId);
 
-    const posts = await fetchPostDetails(followeeIds);
+    const posts = await fetchManyPostDetails(followeeIds);
 
     return mapToPostDTO(posts);
 }
@@ -146,12 +120,92 @@ export async function getUsersFeed(userId: string, postId: string) {
     //return that and imageUrls
 }
 
-export async function followUser(userId: string) {
-    //add followed usersId to user's following list
-    //add following usersId to user's followed list
+export async function toggleFollowUser(followerId: string, followeeId: string) {  
+    if (followerId === followeeId) {
+        throw new Error("You can't unfollow/follow yourself");
+    }
+    return await prisma.$transaction(async (prisma) => {
+        //add followed usersId to user's following list
+        const existingFollow = await prisma.follow.findUnique({
+            where: {
+                followerId_followeeId: {
+                    followeeId,
+                    followerId,
+                },
+            },
+        });
+        if (existingFollow) {
+            await prisma.follow.delete({
+                where: {
+                    followerId_followeeId: {
+                        followeeId,
+                        followerId,
+                    },
+                },
+            });
+            return {
+                action: "unfollow",
+                message: "You have unfollowed user ${followeeId}",
+            };
+        } else {
+            await prisma.follow.create({
+                data: {
+                    followeeId,
+                    followerId,
+                },
+            });
+            return {
+                action: "follow",
+                message: "You have followed user ${followeeId}",
+            };
+        }
+    });
 }
 
 export async function showFollows(userId: string) {
     //return users follower and following count
+    const followCounts = await prisma.user.findUnique({
+        where: {
+            id: userId,
+        },
+        select: {
+            _count: {
+                select: {
+                    followedBy: true,
+                    following: true,
+                },
+            },
+        },
+    });
+    return {
+        followCount: followCounts?._count.followedBy,
+        followingCount: followCounts?._count.following,
+    };
 }
 
+export async function getSavedPosts(userId: string) {
+    const savedPosts = await prisma.save.findMany({
+        where: {
+            userId: userId,
+        },
+        include: {
+            post: {
+                include: {
+                    user: {
+                        select: {
+                            username: true,
+                        },
+                    },
+                },
+            },
+        },
+    });
+
+    return savedPosts.map(save => ({
+        id: save.post.id,
+        caption: save.post.caption,
+        imageUrl: save.post.imageUrl,
+        username: save.post.user.username,
+        createdAt: save.post.createdAt,
+    }));
+}

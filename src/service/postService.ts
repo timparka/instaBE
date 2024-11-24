@@ -12,6 +12,127 @@ export async function createPost(data: Prisma.PostCreateInput) {
     return post;
 }
 
+export async function fetchManyPostDetails(followeeIds: string[]) {
+    return await prisma.post.findMany({
+        where: {
+            userId: {
+                in: followeeIds,
+            },
+        },
+        orderBy: {
+            createdAt: "desc"
+        },
+        include: {
+            user: {
+                select: {
+                    id: true,
+                    username: true,
+                    imageUrl: true,
+                }
+            },
+            _count: {
+                select: {
+                    likes: true,
+                    comments: true
+                }
+            },
+        },
+    });
+}
+
+export async function fetchPostDetails(postId: string) {
+    const post = await prisma.post.findUnique({
+        where: { id: postId },
+        include: {
+            user: {
+                select: {
+                    username: true,
+                },
+            },
+            likes: {
+                select: {
+                    user: {
+                        select: {
+                            username: true,
+                        },
+                    },
+                },
+            },
+            comments: {
+                include: {
+                    user: {
+                        select: {
+                            username: true,
+                        },
+                    },
+                },
+            },
+        },
+    });
+
+    if (!post) {
+        throw new Error('Post not found');
+    }
+
+    return {
+        id: post.id,
+        caption: post.caption,
+        imageUrl: post.imageUrl,
+        username: post.user.username,
+        createdAt: post.createdAt,
+        likeCount: post.likes.length,
+        commentCount: post.comments.length,
+        likes: post.likes.map(like => like.user.username),
+        comments: post.comments.map(comment => ({
+            username: comment.user.username,
+            content: comment.content,
+            createdAt: comment.createdAt,
+        })),
+    };
+}
+
+export async function updatePost(postId: string, userId: string, data: { caption?: string; tags?: string[] }) {
+    const post = await prisma.post.findUnique({
+        where: { id: postId },
+    });
+
+    if (!post) {
+        throw new Error('Post not found');
+    }
+
+    if (post.userId !== userId) {
+        throw new Error('Unauthorized action');
+    }
+
+    const updatedPost = await prisma.post.update({
+        where: { id: postId },
+        data,
+    });
+
+    return updatedPost;
+}
+
+export async function deletePost(postId: string, userId: string) {
+    const post = await prisma.post.findUnique({
+        where: { id: postId },
+    });
+
+    if (!post) {
+        throw new Error('Post not found');
+    }
+
+    if (post.userId !== userId) {
+        throw new Error('Unauthorized action');
+    }
+
+    await prisma.post.delete({
+        where: { id: postId },
+    });
+
+    return { message: 'Post deleted successfully' };
+}
+
+
 export async function addLike(postId: string, userId: string) {
     //get postId and userId
     //make new like object with that postId and userId
@@ -33,7 +154,7 @@ export async function getLikes(postId: string) {
     return count;
 }
 
-export async function recentUsernameOfLikes(postId: string) {
+export async function getUsernameOfLikes(postId: string) {
     const recentLikes = await prisma.like.findMany({
         where: {
             postId: postId,
@@ -41,7 +162,6 @@ export async function recentUsernameOfLikes(postId: string) {
         orderBy: {
             createdAt: 'desc',
         },
-        take: 3,
         include: {
             user: {
                 select: {
@@ -50,11 +170,7 @@ export async function recentUsernameOfLikes(postId: string) {
             },
         },
     });
-    const usernames = recentLikes.map((like) => like.user.username);
-    if (recentLikes.length === 0) {
-        return [];
-    }
-    return usernames;
+    return recentLikes.map((like) => like.user.username);
 }
 
 export async function addComment(postId: string, userId: string, commentId: string) {
