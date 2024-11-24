@@ -2,6 +2,8 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from 'bcrypt';
 import { omit, orderBy } from 'lodash';
 import { Prisma } from "@prisma/client";
+import { mapToPostDTO } from "../utils/formatPostDTO";
+import { PostDTO } from "../dto/postDTO";
 
 const prisma = new PrismaClient();
 
@@ -33,8 +35,7 @@ export async function findUser(id: string) {
     }
 }
 
-export async function getHomeFeed(userId: string, postId: string) {
-    try {
+export async function getFollowingIds(userId: string): Promise<string[]> {
     //need userIds of user who is calling this methods following list
     const followingList = await prisma.user.findUnique({
         where: {
@@ -54,40 +55,45 @@ export async function getHomeFeed(userId: string, postId: string) {
         return [];
     }
     //put 
-    const followeeIds = followingList.following.map(followee => followee.followeeId);
+    return followingList.following.map(followee => followee.followeeId);
     //from here we grab the most recent posts ids (createdAt flag)
     //get post's imageurls
+}
 
-    const homeFeed = await prisma.post.findMany({
+export async function fetchPostDetails(followeeIds: string[]) {
+    return await prisma.post.findMany({
         where: {
             userId: {
                 in: followeeIds,
             },
         },
         orderBy: {
-            createdAt: 'desc',
+            createdAt: "desc"
         },
-        select: {
-            id: true,
-            imageUrl: true,
-            caption: true,
-            createdAt: true,
+        include: {
             user: {
                 select: {
                     id: true,
                     username: true,
-                    imageUrl: true,
-                },
+                    imageUrl: true
+                }
+            },
+            _count: {
+                select: {
+                    likes: true,
+                    comments: true
+                }
             },
         },
     });
-    return homeFeed;
+}
 
-    }
-    catch (error) {
-        console.error("Error fetching home feed:", error);
-        throw new Error("Could not fetch home feed.");
-    }
+export async function getHomeFeed(userId: string): Promise<PostDTO[]> {
+    const followeeIds = await getFollowingIds(userId);
+
+    const posts = await fetchPostDetails(followeeIds);
+
+    return mapToPostDTO(posts);
 }
 
 export async function getUsersPage(userId: string) {
@@ -121,11 +127,21 @@ export async function getUsersPage(userId: string) {
 
 export async function getUsersFeed(userId: string, postId: string) {
     //grab userId and post id from that user
-    const userFeed = await prisma.user.findMany({
+    const userFeed = await prisma.user.findUnique({
         where: {
-
-        }
-    })
+            id: userId,
+        },
+        select: {
+            posts: {
+              orderBy: {
+                createdAt: 'desc', // Order posts by createdAt
+              },
+              select: {
+                imageUrl: true, // Only fetch image URLs
+              },
+            },
+        },
+    });
     //use functions below to grab likes and comments for each unique post
     //return that and imageUrls
 }
@@ -138,3 +154,4 @@ export async function followUser(userId: string) {
 export async function showFollows(userId: string) {
     //return users follower and following count
 }
+
