@@ -67,7 +67,7 @@ export async function getHomeFeed(userId: string): Promise<PostDTO[]> {
 
     const posts = await fetchManyPostDetails(followeeIds);
 
-    return mapToPostDTO(posts);
+    return posts;
 }
 
 export async function getUsersPage(userId: string) {

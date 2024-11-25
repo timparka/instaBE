@@ -1,5 +1,6 @@
 import { Prisma, PrismaClient } from "@prisma/client";
 import { orderBy } from "lodash";
+import { formatPostDTO } from "../utils/formatPostDTO";
 
 const prisma = new PrismaClient();
 
@@ -13,14 +14,14 @@ export async function createPost(data: Prisma.PostCreateInput) {
 }
 
 export async function fetchManyPostDetails(followeeIds: string[]) {
-    return await prisma.post.findMany({
+    const posts = await prisma.post.findMany({
         where: {
             userId: {
                 in: followeeIds,
             },
         },
         orderBy: {
-            createdAt: "desc"
+            createdAt: "desc",
         },
         include: {
             user: {
@@ -28,17 +29,42 @@ export async function fetchManyPostDetails(followeeIds: string[]) {
                     id: true,
                     username: true,
                     imageUrl: true,
-                }
+                },
             },
             _count: {
                 select: {
                     likes: true,
-                    comments: true
-                }
+                    comments: true,
+                },
+            },
+            likes: {
+                include: {
+                    user: {
+                        select: {
+                            username: true,
+                        },
+                    },
+                },
+            },
+            comments: {
+                include: {
+                    user: {
+                        select: {
+                            username: true,
+                        },
+                    },
+                },
             },
         },
     });
+
+    if (!posts || posts.length === 0) {
+        return [];
+    }
+
+    return posts.map(formatPostDTO);
 }
+
 
 export async function fetchPostDetails(postId: string) {
     const post = await prisma.post.findUnique({
@@ -46,11 +72,19 @@ export async function fetchPostDetails(postId: string) {
         include: {
             user: {
                 select: {
+                    id: true,
                     username: true,
+                    imageUrl: true,
+                },
+            },
+            _count: {
+                select: {
+                    likes: true,
+                    comments: true,
                 },
             },
             likes: {
-                select: {
+                include: {
                     user: {
                         select: {
                             username: true,
@@ -71,25 +105,12 @@ export async function fetchPostDetails(postId: string) {
     });
 
     if (!post) {
-        throw new Error('Post not found');
+        throw new Error("Post not found");
     }
 
-    return {
-        id: post.id,
-        caption: post.caption,
-        imageUrl: post.imageUrl,
-        username: post.user.username,
-        createdAt: post.createdAt,
-        likeCount: post.likes.length,
-        commentCount: post.comments.length,
-        likes: post.likes.map(like => like.user.username),
-        comments: post.comments.map(comment => ({
-            username: comment.user.username,
-            content: comment.content,
-            createdAt: comment.createdAt,
-        })),
-    };
+    return formatPostDTO(post);
 }
+
 
 export async function updatePost(postId: string, userId: string, data: { caption?: string; tags?: string[] }) {
     const post = await prisma.post.findUnique({
