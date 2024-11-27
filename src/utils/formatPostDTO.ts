@@ -1,4 +1,4 @@
-import { postDTO } from "../dto/PostDTO";
+import { postDTO } from "../dto/postDTO";
 
 
 export function formatPostDTO(post: any): postDTO {

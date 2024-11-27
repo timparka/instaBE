@@ -4,7 +4,7 @@ import { omit, orderBy } from 'lodash';
 import { Prisma } from "@prisma/client";
 import { mapToPostDTO } from "../utils/formatPostDTO";
 import { fetchManyPostDetails } from "./postService";
-import { postDTO } from "../dto/PostDTO";
+import { postDTO } from "../dto/postDTO";
 
 const prisma = new PrismaClient();
 
