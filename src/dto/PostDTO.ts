@@ -1,4 +1,4 @@
-export interface PostDTO {
+export interface postDTO {
     postId: string;
     imageUrl: string;
     caption: string | null;

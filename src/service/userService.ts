@@ -3,8 +3,8 @@ import bcrypt from 'bcrypt';
 import { omit, orderBy } from 'lodash';
 import { Prisma } from "@prisma/client";
 import { mapToPostDTO } from "../utils/formatPostDTO";
-import { PostDTO } from "../dto/postDTO";
 import { fetchManyPostDetails } from "./postService";
+import { postDTO } from "../dto/PostDTO";
 
 const prisma = new PrismaClient();
 
@@ -62,7 +62,7 @@ export async function getFollowingIds(userId: string): Promise<string[]> {
 }
 
 
-export async function getHomeFeed(userId: string): Promise<PostDTO[]> {
+export async function getHomeFeed(userId: string): Promise<postDTO[]> {
     const followeeIds = await getFollowingIds(userId);
 
     const posts = await fetchManyPostDetails(followeeIds);

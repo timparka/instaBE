@@ -1,6 +1,7 @@
-import { PostDTO } from "../dto/postDTO";
+import { postDTO } from "../dto/PostDTO";
 
-export function formatPostDTO(post: any): PostDTO {
+
+export function formatPostDTO(post: any): postDTO {
     return {
         postId: post.id,
         imageUrl: post.imageUrl,
@@ -23,6 +24,6 @@ export function formatPostDTO(post: any): PostDTO {
         })),
     };
 }
-export function mapToPostDTO(posts: any[]): PostDTO[] {
+export function mapToPostDTO(posts: any[]): postDTO[] {
     return posts.map(formatPostDTO);
 }
